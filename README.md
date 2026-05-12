@@ -2,7 +2,58 @@
 
 A project to build a persistent, reliable NoSQL database from scratch using C++. 
 
-## 🗺️ Project Roadmap
+## 📅 Weekly Implementation Timeline
+
+### Week 1 — Foundations
+**Learn:**
+- What databases do
+- Key-value stores
+- Disk vs RAM
+
+**Build:**
+- In-memory key-value store
+- `PUT key value`
+- `GET key`
+- `DELETE key`
+
+### Week 2 — Disk Storage
+**Implement:**
+- Append-only storage file
+- Serialization
+- Record reading
+
+*Result: The DB can now persist data.*
+
+### Week 3 — Write Ahead Logging
+**Add:**
+- WAL file
+- Crash recovery
+
+*Result: The DB is now durable.*
+
+### Week 4 — MemTable
+**Add:**
+- Sorted in-memory structure
+- Flush when full
+
+*Result: Writes become fast.*
+
+### Week 5 — SSTables
+**Implement:**
+- Sorted disk files
+- Binary search for lookups
+
+*Result: Reads are efficient.*
+
+### Week 6 — Compaction
+**Implement:**
+- Merge SSTables.
+
+*Result: The system behaves like a real LSM database.*
+
+---
+
+## 🗺️ Detailed Module Roadmap
 
 This project is broken down into 14 progressive modules. Here is the current development progress:
 
@@ -25,6 +76,6 @@ This project is broken down into 14 progressive modules. Here is the current dev
 
 ## 📍 Current Status
 
-**Current phase:** Transitioning from **Module 8** to **Module 9**
+**Current phase:** Week 5 / Transitioning from **Module 8** to **Module 9**
 
 The fundamental in-memory (`memtable.h`) and on-disk file formats (`sstable.h`) have been designed and laid out. The immediate next step is to implement the search logic required to query the SSTables (Module 9), which will pave the way for a full LSM Tree architecture (Module 10).
