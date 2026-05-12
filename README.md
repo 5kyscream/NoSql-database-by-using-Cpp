@@ -2,14 +2,9 @@
 
 A project to build a persistent, reliable NoSQL database from scratch using C++. 
 
-## 📅 Weekly Implementation Timeline
+## Weekly Implementation Timeline
 
 ### Week 1 — Foundations
-**Learn:**
-- What databases do
-- Key-value stores
-- Disk vs RAM
-
 **Build:**
 - In-memory key-value store
 - `PUT key value`
@@ -53,29 +48,25 @@ A project to build a persistent, reliable NoSQL database from scratch using C++.
 
 ---
 
-## 🗺️ Detailed Module Roadmap
+## Detailed Implementation Roadmap
 
-This project is broken down into 14 progressive modules. Here is the current development progress:
+This project is broken down into core database components. Here is the current development progress:
 
-- [x] **Module 1** — What databases actually do
-- [x] **Module 2** — Key-value storage fundamentals
-- [x] **Module 3** — Disk vs RAM and why databases are hard
-- [x] **Module 4** — Basic key-value store in memory
-- [x] **Module 5** — Persistent storage on disk
-- [x] **Module 6** — Write Ahead Logging (WAL)
-- [x] **Module 7** — MemTable design
-- [x] **Module 8** — SSTable file format
-- [ ] **Module 9** — Searching SSTables
-- [ ] **Module 10** — LSM Tree architecture
-- [ ] **Module 11** — Compaction process
-- [ ] **Module 12** — Bloom Filters
-- [ ] **Module 13** — Background compaction threads
-- [ ] **Module 14** — Performance improvements
+- [x] **Component 1** — In-Memory Key-Value Store
+- [x] **Component 2** — Persistent Storage on Disk
+- [x] **Component 3** — Write Ahead Logging (WAL)
+- [x] **Component 4** — MemTable Design
+- [x] **Component 5** — SSTable File Format
+- [ ] **Component 6** — SSTable Search & Lookups
+- [ ] **Component 7** — Full LSM Tree Architecture
+- [ ] **Component 8** — Compaction Process
+- [ ] **Component 9** — Bloom Filters
+- [ ] **Component 10** — Background Compaction Threads
 
 ---
 
-## 📍 Current Status
+## Current Status
 
-**Current phase:** Week 5 / Transitioning from **Module 8** to **Module 9**
+**Current phase:** Week 5 / Transitioning from **Component 5** to **Component 6**
 
-The fundamental in-memory (`memtable.h`) and on-disk file formats (`sstable.h`) have been designed and laid out. The immediate next step is to implement the search logic required to query the SSTables (Module 9), which will pave the way for a full LSM Tree architecture (Module 10).
+The fundamental in-memory (`memtable.h`) and on-disk file formats (`sstable.h`) have been designed and laid out. The immediate next step is to implement the search logic required to query the SSTables (Component 6), which will pave the way for a full LSM Tree architecture (Component 7).
