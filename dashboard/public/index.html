@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>MiniRed Dashboard</title>
+  <meta name="description" content="Real-time dashboard for MiniRed — Redis-compatible key-value server with LSM-tree storage"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <!-- ── Header ──────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo">
+        <span class="logo-icon">⚡</span>
+        <span class="logo-text">Mini<span class="accent">Red</span></span>
+      </div>
+      <div class="status-pill" id="status-pill">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting…</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="version-badge">v0.1.0-lsm</span>
+    </div>
+  </header>
+
+  <!-- ── Main layout ────────────────────────────────────────────────────── -->
+  <main class="main">
+
+    <!-- ── Metrics row ─────────────────────────────────────────────────── -->
+    <section class="metrics-row" id="metrics-row">
+      <div class="metric-card" id="card-ops">
+        <div class="metric-label">Ops / sec</div>
+        <div class="metric-value" id="m-ops">—</div>
+        <div class="metric-sub" id="m-total">— total</div>
+      </div>
+      <div class="metric-card" id="card-keys">
+        <div class="metric-label">Keys</div>
+        <div class="metric-value" id="m-keys">—</div>
+        <div class="metric-sub" id="m-mem">— bytes memtable</div>
+      </div>
+      <div class="metric-card" id="card-sst">
+        <div class="metric-label">SSTables</div>
+        <div class="metric-value" id="m-sst">—</div>
+        <div class="metric-sub" id="m-bloom">— bloom skips</div>
+      </div>
+      <div class="metric-card" id="card-cache">
+        <div class="metric-label">Cache Hit Rate</div>
+        <div class="metric-value" id="m-hitrate">—</div>
+        <div class="metric-sub" id="m-cache-detail">— hits / — misses</div>
+      </div>
+    </section>
+
+    <!-- ── Charts ──────────────────────────────────────────────────────── -->
+    <section class="charts-row">
+      <div class="chart-card">
+        <div class="chart-title">Ops / sec (live)</div>
+        <canvas id="chart-ops" height="120"></canvas>
+      </div>
+      <div class="chart-card">
+        <div class="chart-title">Cache Hits vs Misses (cumulative)</div>
+        <canvas id="chart-cache" height="120"></canvas>
+      </div>
+    </section>
+
+    <!-- ── Bottom panels ───────────────────────────────────────────────── -->
+    <section class="panels-row">
+
+      <!-- Command console -->
+      <div class="panel console-panel">
+        <div class="panel-header">
+          <span class="panel-icon">❯</span>
+          <span class="panel-title">Command Console</span>
+        </div>
+        <div class="console-output" id="console-output"></div>
+        <div class="console-input-row">
+          <span class="console-prompt">minired&gt;</span>
+          <input class="console-input" id="console-input"
+                 type="text" placeholder="SET foo bar | GET foo | KEYS *"
+                 autocomplete="off" spellcheck="false"/>
+          <button class="btn btn-primary" id="btn-send">Send</button>
+        </div>
+        <div class="console-history-hint">↑ / ↓ to navigate history</div>
+      </div>
+
+      <!-- Benchmark panel -->
+      <div class="panel bench-panel">
+        <div class="panel-header">
+          <span class="panel-icon">🚀</span>
+          <span class="panel-title">Benchmark</span>
+        </div>
+        <div class="bench-desc">
+          Runs <code>redis-benchmark</code> against MiniRed and streams
+          results. Requires <code>redis-benchmark</code> in PATH on the server.
+        </div>
+        <button class="btn btn-accent" id="btn-bench">▶ Run Benchmark</button>
+        <div class="bench-output" id="bench-output"></div>
+        <div class="chart-card bench-chart-card" id="bench-chart-wrap" style="display:none">
+          <div class="chart-title">Benchmark Throughput</div>
+          <canvas id="chart-bench" height="140"></canvas>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

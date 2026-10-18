@@ -1,0 +1,35 @@
+services:
+  minired:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: minired-server
+    ports:
+      - "6379:6379"
+    volumes:
+      - minired_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "sh", "-c", "echo PING | nc -q1 127.0.0.1 6379 | grep -q PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  dashboard:
+    build:
+      context: ./dashboard
+      dockerfile: Dockerfile.dashboard
+    container_name: minired-dashboard
+    ports:
+      - "3000:3000"
+    environment:
+      - MINIRED_HOST=minired
+      - MINIRED_PORT=6379
+      - DASHBOARD_PORT=3000
+    depends_on:
+      minired:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  minired_data:

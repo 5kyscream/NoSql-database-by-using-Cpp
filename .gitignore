@@ -1,0 +1,8 @@
+build/
+data/
+*.o
+*.a
+*.so
+.cache/
+dashboard/node_modules/
+benchmarks/results.md
