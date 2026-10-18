@@ -1,0 +1,89 @@
+name: Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      requests:
+        description: "Number of requests per test"
+        required: false
+        default: "100000"
+      clients:
+        description: "Comma-separated client counts (e.g. 1,10,50,100)"
+        required: false
+        default: "1,10,50,100"
+      pipeline:
+        description: "Comma-separated pipeline depths (e.g. 1,8,32)"
+        required: false
+        default: "1,8,32"
+
+jobs:
+  benchmark:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential redis-server redis-tools
+
+      - name: Build MiniRed (Release)
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build --parallel $(nproc)
+
+      - name: Machine info
+        run: |
+          echo "### Runner Specs" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          uname -a >> $GITHUB_STEP_SUMMARY
+          lscpu | grep -E 'Model name|CPU\(s\)|Thread|MHz' >> $GITHUB_STEP_SUMMARY
+          free -h >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Start MiniRed
+        run: |
+          mkdir -p /tmp/minired_bench
+          ./build/minired --data-dir /tmp/minired_bench --fsync no &
+          echo "MINIRED_PID=$!" >> $GITHUB_ENV
+          sleep 1
+
+      - name: Verify MiniRed is alive
+        run: redis-cli -p 6379 PING
+
+      - name: Run benchmark (MiniRed)
+        env:
+          MINIRED_PORT: 6379
+          N_REQUESTS: ${{ github.event.inputs.requests }}
+        run: |
+          chmod +x benchmarks/run_benchmarks.sh
+          bash benchmarks/run_benchmarks.sh
+
+      - name: Start real Redis on port 6380
+        run: |
+          redis-server --port 6380 --daemonize yes --logfile /tmp/redis.log
+          sleep 1
+
+      - name: Run benchmark (real Redis)
+        env:
+          MINIRED_PORT: 6379
+          REDIS_PORT: 6380
+          N_REQUESTS: ${{ github.event.inputs.requests }}
+        run: bash benchmarks/run_benchmarks.sh
+
+      - name: Stop servers
+        run: |
+          kill $MINIRED_PID 2>/dev/null || true
+          redis-cli -p 6380 SHUTDOWN NOSAVE 2>/dev/null || true
+
+      - name: Print results
+        run: cat benchmarks/results.md
+
+      - name: Upload benchmark results
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-results
+          path: benchmarks/results.md
+
+      - name: Post results to step summary
+        run: cat benchmarks/results.md >> $GITHUB_STEP_SUMMARY

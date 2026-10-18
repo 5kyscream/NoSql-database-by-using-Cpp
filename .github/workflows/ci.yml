@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libgtest-dev redis-tools
+
+      - name: Build GoogleTest
+        run: |
+          cd /usr/src/googletest
+          sudo cmake -B build
+          sudo cmake --build build --parallel $(nproc)
+          sudo cmake --install build
+
+      - name: Configure MiniRed
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build MiniRed
+        run: cmake --build build --parallel $(nproc)
+
+      - name: Run unit tests
+        run: ctest --test-dir build --output-on-failure -R "test_"
+
+      - name: Smoke test – PING
+        run: |
+          mkdir -p /tmp/minired_ci
+          ./build/minired --data-dir /tmp/minired_ci &
+          SERVER_PID=$!
+          sleep 1
+          RESP=$(redis-cli -p 6379 PING 2>/dev/null || echo "FAIL")
+          kill $SERVER_PID 2>/dev/null || true
+          echo "PING response: $RESP"
+          [ "$RESP" = "PONG" ] || (echo "Smoke test FAILED" && exit 1)
+
+      - name: Smoke test – SET / GET / DEL / TTL
+        run: |
+          mkdir -p /tmp/minired_ci2
+          ./build/minired --data-dir /tmp/minired_ci2 &
+          SERVER_PID=$!
+          sleep 1
+          redis-cli -p 6379 SET foo bar
+          VAL=$(redis-cli -p 6379 GET foo)
+          redis-cli -p 6379 SET ttlkey val EX 5
+          TTL=$(redis-cli -p 6379 TTL ttlkey)
+          redis-cli -p 6379 DEL foo
+          AFTER=$(redis-cli -p 6379 GET foo)
+          kill $SERVER_PID 2>/dev/null || true
+          echo "GET foo=$VAL  TTL ttlkey=$TTL  GET foo after del=$AFTER"
+          [ "$VAL" = "bar" ] || (echo "GET failed" && exit 1)
+          [ "$TTL" -gt 0 ]   || (echo "TTL failed" && exit 1)
+          [ -z "$AFTER" ]    || (echo "DEL failed" && exit 1)
+
