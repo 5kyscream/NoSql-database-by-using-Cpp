@@ -17,14 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake build-essential libgtest-dev redis-tools
-
-      - name: Build GoogleTest
-        run: |
-          cd /usr/src/googletest
-          sudo cmake -B build
-          sudo cmake --build build --parallel $(nproc)
-          sudo cmake --install build
+          sudo apt-get install -y cmake build-essential redis-tools
 
       - name: Configure MiniRed
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
@@ -43,6 +36,7 @@ jobs:
           sleep 1
           RESP=$(redis-cli -p 6379 PING 2>/dev/null || echo "FAIL")
           kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
           echo "PING response: $RESP"
           [ "$RESP" = "PONG" ] || (echo "Smoke test FAILED" && exit 1)
 
@@ -59,6 +53,7 @@ jobs:
           redis-cli -p 6379 DEL foo
           AFTER=$(redis-cli -p 6379 GET foo)
           kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
           echo "GET foo=$VAL  TTL ttlkey=$TTL  GET foo after del=$AFTER"
           [ "$VAL" = "bar" ] || (echo "GET failed" && exit 1)
           [ "$TTL" -gt 0 ]   || (echo "TTL failed" && exit 1)

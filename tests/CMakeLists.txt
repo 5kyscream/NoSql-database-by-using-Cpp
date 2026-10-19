@@ -1,17 +1,9 @@
 cmake_minimum_required(VERSION 3.16)
 
-# ── Try to find GoogleTest; fall back to a bundled minimal runner ─────────────
-find_package(GTest QUIET)
-
-if(GTest_FOUND)
-    message(STATUS "Using system GoogleTest")
-    set(GTEST_LIBS GTest::gtest GTest::gtest_main)
-else()
-    message(STATUS "GoogleTest not found – using bundled minimal test runner")
-    add_library(minired_testrunner INTERFACE)
-    target_include_directories(minired_testrunner INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-    set(GTEST_LIBS minired_testrunner)
-endif()
+# ── Bundled minimal test runner ───────────────────────────────────────────────
+add_library(minired_testrunner INTERFACE)
+target_include_directories(minired_testrunner INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+set(GTEST_LIBS minired_testrunner)
 
 # ── Gather storage + protocol sources (excluding main.cpp) ───────────────────
 file(GLOB_RECURSE LIB_SOURCES
