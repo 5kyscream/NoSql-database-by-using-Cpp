@@ -10,7 +10,9 @@ int main(int argc, char** argv) {
     // Ensure data directory exists
     std::filesystem::create_directories(cfg.data_dir);
 
-    minired::storage::DB db(cfg.data_dir, cfg.fsync_policy, cfg.memtable_max_bytes);
+    minired::storage::DB db(cfg.data_dir, cfg.fsync_policy, cfg.memtable_max_bytes,
+                            cfg.block_cache_bytes, cfg.compaction_trigger,
+                            cfg.sstable_index_interval);
     db.open();
 
     try {

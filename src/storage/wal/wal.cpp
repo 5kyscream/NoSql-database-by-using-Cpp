@@ -1,6 +1,10 @@
 #include "storage/wal/wal.h"
 #include <fcntl.h>
+#ifdef _WIN32
+#include <io.h>
+#else
 #include <unistd.h>
+#endif
 #include <stdexcept>
 #include <cstring>
 #include <iostream>
@@ -83,7 +87,11 @@ void WAL::append(const std::string& resp_cmd) {
 }
 
 void WAL::do_fsync() {
+#ifdef _WIN32
+    if (fd_ >= 0) ::_commit(fd_);
+#else
     if (fd_ >= 0) ::fdatasync(fd_);
+#endif
 }
 
 void WAL::sync_loop() {

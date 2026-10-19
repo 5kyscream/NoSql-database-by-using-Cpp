@@ -59,6 +59,12 @@ struct TestRegistrar {
     throw std::runtime_error("assertion failed");                                   \
 }} while(0)
 
+#define EXPECT_LE(a,b)  do { if (!((a)<=(b))) {                                     \
+    std::cerr << "  FAIL " __FILE__ ":" << __LINE__                                 \
+              << " EXPECT_LE " << (a) << " <= " << (b) << "\n";                    \
+    throw std::runtime_error("assertion failed");                                   \
+}} while(0)
+
 #define EXPECT_GE(a,b)  do { if (!((a)>=(b))) {                                     \
     std::cerr << "  FAIL " __FILE__ ":" << __LINE__                                 \
               << " EXPECT_GE " << (a) << " >= " << (b) << "\n";                    \

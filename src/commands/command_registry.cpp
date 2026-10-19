@@ -130,6 +130,37 @@ static std::string cmd_incr(const Args& args, storage::DB& db) {
     }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// INCRBY key delta / DECRBY key delta
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_incrby(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'incrby' command");
+    int64_t delta;
+    try { delta = std::stoll(args[2]); } catch (...) {
+        return err("ERR value is not an integer or out of range");
+    }
+    try {
+        return serialize_integer(db.incr(args[1], delta));
+    } catch (const std::exception& e) {
+        return err(e.what());
+    }
+}
+
+static std::string cmd_decrby(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'decrby' command");
+    int64_t delta;
+    try { delta = std::stoll(args[2]); } catch (...) {
+        return err("ERR value is not an integer or out of range");
+    }
+    try {
+        return serialize_integer(db.incr(args[1], -delta));
+    } catch (const std::exception& e) {
+        return err(e.what());
+    }
+}
+
 static std::string cmd_decr(const Args& args, storage::DB& db) {
     if (args.size() != 2)
         return err("ERR wrong number of arguments for 'decr' command");
@@ -191,6 +222,100 @@ static std::string cmd_dbsize(const Args& args, storage::DB& db) {
 // ─────────────────────────────────────────────────────────────────────────────
 // FLUSHALL
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// APPEND key value
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_append(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'append' command");
+    size_t new_len = db.append(args[1], args[2]);
+    return serialize_integer(static_cast<int64_t>(new_len));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STRLEN key
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_strlen(const Args& args, storage::DB& db) {
+    if (args.size() != 2)
+        return err("ERR wrong number of arguments for 'strlen' command");
+    return serialize_integer(static_cast<int64_t>(db.strlen(args[1])));
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GETSET key value  (atomic get-then-set, deprecated in Redis 6.2 but common)
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_getset(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'getset' command");
+    auto old_val = db.get(args[1]);
+    db.set(args[1], args[2]);
+    if (!old_val.has_value()) return serialize_null_bulk();
+    return serialize_bulk(*old_val);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MSET key value [key value ...]
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_mset(const Args& args, storage::DB& db) {
+    if (args.size() < 3 || (args.size() % 2) == 0)
+        return err("ERR wrong number of arguments for 'mset' command");
+    for (size_t i = 1; i < args.size(); i += 2) {
+        db.set(args[i], args[i + 1]);
+    }
+    return ok();
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MGET key [key ...]
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_mget(const Args& args, storage::DB& db) {
+    if (args.size() < 2)
+        return err("ERR wrong number of arguments for 'mget' command");
+    std::string out = "*" + std::to_string(args.size() - 1) + "\r\n";
+    for (size_t i = 1; i < args.size(); ++i) {
+        auto val = db.get(args[i]);
+        if (val.has_value()) out += serialize_bulk(*val);
+        else                 out += serialize_null_bulk();
+    }
+    return out;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PEXPIRE key milliseconds
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_pexpire(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'pexpire' command");
+    int64_t ms;
+    try { ms = std::stoll(args[2]); } catch (...) {
+        return err("ERR value is not an integer or out of range");
+    }
+    if (ms <= 0) return err("ERR invalid expire time in 'pexpire' command");
+    bool ok_ = db.expire(args[1], now_ms_cmd() + ms);
+    return serialize_integer(ok_ ? 1 : 0);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// PTTL key   → milliseconds remaining; -1 = persistent; -2 = not found
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_pttl(const Args& args, storage::DB& db) {
+    if (args.size() != 2)
+        return err("ERR wrong number of arguments for 'pttl' command");
+    int64_t ms = db.ttl_ms(args[1]);
+    return serialize_integer(ms);  // already in milliseconds
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SETNX key value  (set if not exists)
+// ─────────────────────────────────────────────────────────────────────────────
+static std::string cmd_setnx(const Args& args, storage::DB& db) {
+    if (args.size() != 3)
+        return err("ERR wrong number of arguments for 'setnx' command");
+    if (db.exists(args[1])) return serialize_integer(0);
+    db.set(args[1], args[2]);
+    return serialize_integer(1);
+}
+
 static std::string cmd_flushall(const Args& args, storage::DB& db) {
     (void)args;
     db.flush_all();
@@ -241,8 +366,18 @@ void CommandRegistry::register_all() {
     reg("EXISTS",   cmd_exists);
     reg("INCR",     cmd_incr);
     reg("DECR",     cmd_decr);
+    reg("INCRBY",   cmd_incrby);
+    reg("DECRBY",   cmd_decrby);
+    reg("APPEND",   cmd_append);
+    reg("STRLEN",   cmd_strlen);
+    reg("GETSET",   cmd_getset);
+    reg("MSET",     cmd_mset);
+    reg("MGET",     cmd_mget);
     reg("EXPIRE",   cmd_expire);
+    reg("PEXPIRE",  cmd_pexpire);
     reg("TTL",      cmd_ttl);
+    reg("PTTL",     cmd_pttl);
+    reg("SETNX",    cmd_setnx);
     reg("KEYS",     cmd_keys);
     reg("DBSIZE",   cmd_dbsize);
     reg("FLUSHALL", cmd_flushall);

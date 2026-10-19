@@ -87,12 +87,22 @@ everysec sync) are involved.
 | ECHO    | `ECHO message` | Returns message |
 | SET     | `SET key value [EX secs \| PX ms]` | With optional TTL |
 | GET     | `GET key` | Nil reply if missing/expired |
+| GETSET  | `GETSET key value` | Atomic get+set; returns old value |
+| SETNX   | `SETNX key value` | Set only if key doesn't exist |
 | DEL     | `DEL key [key ...]` | Returns count deleted |
 | EXISTS  | `EXISTS key [key ...]` | Returns count found |
+| APPEND  | `APPEND key value` | Append to string; returns new length |
+| STRLEN  | `STRLEN key` | Returns string length (0 if missing) |
 | INCR    | `INCR key` | Atomic integer increment |
 | DECR    | `DECR key` | Atomic integer decrement |
+| INCRBY  | `INCRBY key delta` | Increment by delta |
+| DECRBY  | `DECRBY key delta` | Decrement by delta |
+| MSET    | `MSET key value [key value ...]` | Set multiple keys atomically |
+| MGET    | `MGET key [key ...]` | Get multiple keys |
 | EXPIRE  | `EXPIRE key seconds` | Set TTL on existing key |
+| PEXPIRE | `PEXPIRE key milliseconds` | Set TTL in milliseconds |
 | TTL     | `TTL key` | Seconds remaining; -1 no expiry; -2 not found |
+| PTTL    | `PTTL key` | Milliseconds remaining |
 | KEYS    | `KEYS pattern` | Glob `*` and `?` supported |
 | DBSIZE  | `DBSIZE` | Count of live keys |
 | FLUSHALL| `FLUSHALL` | Delete all keys |
@@ -210,7 +220,7 @@ docker compose up --build
 - No replication or clustering
 - No AUTH / TLS
 - KEYS does a full scan (same as Redis in single-instance mode)
-- Compaction runs synchronously on the main thread (background thread in roadmap)
+- Compaction runs synchronously on the WAL-flush path (background thread in roadmap)
 
 ### Roadmap
 - [ ] Background compaction thread with level-based tiering

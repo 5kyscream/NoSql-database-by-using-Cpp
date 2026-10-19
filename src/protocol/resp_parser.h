@@ -12,16 +12,19 @@ struct ErrorString  { std::string value; };
 struct Integer      { int64_t     value; };
 struct BulkString   { std::string value; bool is_null = false; };
 struct NullBulk     {};
-struct Array;
+struct RespValue;
+struct Array        { std::vector<RespValue> elements; };
 
-using RespValue = std::variant<
-    SimpleString,
-    ErrorString,
-    Integer,
-    BulkString,
-    NullBulk,
-    std::vector<RespValue>   // Array (recursive via vector)
->;
+struct RespValue {
+    std::variant<
+        SimpleString,
+        ErrorString,
+        Integer,
+        BulkString,
+        NullBulk,
+        Array
+    > value;
+};
 
 // ── Parser ───────────────────────────────────────────────────────────────────
 // Feed raw bytes incrementally; returns true when a complete command is parsed.

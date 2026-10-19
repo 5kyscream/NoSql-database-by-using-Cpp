@@ -7,37 +7,50 @@
 namespace minired::storage::sstable {
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Wire helpers
+// SSTableWriter wire helpers
 // ─────────────────────────────────────────────────────────────────────────────
-static void write_u32(std::ofstream& f, uint32_t v) {
+void SSTableWriter::write_u32(std::ofstream& f, uint32_t v) {
     char b[4] = {char(v),char(v>>8),char(v>>16),char(v>>24)};
     f.write(b, 4);
 }
-static void write_u64(std::ofstream& f, uint64_t v) {
+void SSTableWriter::write_u64(std::ofstream& f, uint64_t v) {
     char b[8];
     for (int i=0;i<8;++i) b[i]=char(v>>(8*i));
     f.write(b, 8);
 }
-static void write_str(std::ofstream& f, const std::string& s) {
+void SSTableWriter::write_str(std::ofstream& f, const std::string& s) {
     write_u32(f, static_cast<uint32_t>(s.size()));
     f.write(s.data(), static_cast<std::streamsize>(s.size()));
 }
-static uint32_t read_u32(std::ifstream& f) {
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SSTableReader wire helpers
+// ─────────────────────────────────────────────────────────────────────────────
+uint32_t SSTableReader::read_u32(std::ifstream& f) {
     char b[4]; f.read(b,4);
     return uint8_t(b[0])|(uint8_t(b[1])<<8)|(uint8_t(b[2])<<16)|(uint8_t(b[3])<<24);
 }
-static uint64_t read_u64(std::ifstream& f) {
+uint64_t SSTableReader::read_u64(std::ifstream& f) {
     char b[8]; f.read(b,8);
     uint64_t v=0;
     for(int i=0;i<8;++i) v|=(uint64_t(uint8_t(b[i]))<<(8*i));
     return v;
 }
-static std::string read_str(std::ifstream& f) {
+std::string SSTableReader::read_str(std::ifstream& f) {
     uint32_t len = read_u32(f);
     if (!f || len > 64*1024*1024) return {};
     std::string s(len, '\0');
     f.read(s.data(), len);
     return s;
+}
+Record SSTableReader::read_record(std::ifstream& f) {
+    std::string k = read_str(f);
+    if (!f) return {};
+    std::string v = read_str(f);
+    uint64_t exp = read_u64(f);
+    char ts_byte = 0;
+    f.get(ts_byte);
+    return Record{k, v, static_cast<int64_t>(exp), ts_byte != 0};
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
